@@ -1,6 +1,7 @@
 import gradio as gr
 import pandas as pd
 import httpx
+from datetime import datetime
 
 def fetch_species(conservation_status="All"):
     result = httpx.get("http://127.0.0.1:8000/species/")
@@ -101,9 +102,15 @@ def add_sighting(bird_id, spotted_at, location, observer_name, notes):
     if not observer_name or not str(observer_name).strip():
         return "Could not add sighting: observer_name is required.", gr.update()
 
+    spotted_at_str = str(spotted_at).strip()
+    try:
+        datetime.strptime(spotted_at_str, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return "Could not add sighting: spotted_at must be in ISO 8601 UTC format YYYY-MM-DDTHH:MM:SSZ (example: 2026-03-20T10:30:00Z).", gr.update()
+
     payload = {
         "bird_id": int(bird_id),
-        "spotted_at": str(spotted_at).strip(),
+        "spotted_at": spotted_at_str,
         "location": str(location).strip(),
         "observer_name": str(observer_name).strip(),
         "notes": str(notes).strip() if notes is not None else None
